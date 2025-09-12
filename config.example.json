@@ -1,0 +1,18 @@
+{
+  "owner": "your-username",
+  "repo": "your-repository",
+  "branch": "main",
+  "start": "2025-01-01",
+  "end": "2025-01-31",
+  "author": "your-username",
+  "committer": null,
+  "excludeMerges": true,
+  "excludePattern": "^(chore|docs|style):",
+  "includePattern": null,
+  "format": "markdown",
+  "output": "commits.md",
+  "max": 1000,
+  "verbose": true,
+  "retry": 3,
+  "timeout": 30000
+}
