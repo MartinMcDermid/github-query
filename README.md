@@ -4,18 +4,19 @@ A powerful Node.js CLI tool to fetch commit titles from GitHub repositories with
 
 ## Features
 
-- Flexible Date Support: Absolute dates, ISO dates, and relative dates ("7 days ago", "today", etc.)
-- Configuration Files: Load settings from JSON config files
-- Multiple Output Formats: Text, Grouped, Timesheet, Summary, JSON, NDJSON, CSV, Markdown, and HTML
-- Advanced Filtering: Filter by author, committer, regex patterns, and exclude merges
-- File Output: Write results to files instead of stdout
-- Retry Logic: Automatic retry with exponential backoff for failed requests
-- Rate Limit Awareness: Real-time rate limit monitoring and warnings
-- Robust Error Handling: Comprehensive validation and helpful error messages
-- Progress Tracking: Verbose mode with detailed progress information
-- GitHub CLI Integration: Automatic authentication using GitHub CLI
-- Timesheet Ready: Special output format optimized for copying to timesheets
-- Commit Analytics: Statistical analysis and commit type categorization
+- **Git Auto-Detection**: Automatically detects repository information from your current git directory
+- **Flexible Date Support**: Absolute dates, ISO dates, and relative dates ("7 days ago", "today", etc.)
+- **Configuration Files**: Load settings from JSON config files
+- **Multiple Output Formats**: Text, Grouped, Timesheet, Summary, JSON, NDJSON, CSV, Markdown, and HTML
+- **Advanced Filtering**: Filter by author, committer, regex patterns, and exclude merges
+- **File Output**: Write results to files instead of stdout
+- **Retry Logic**: Automatic retry with exponential backoff for failed requests
+- **Rate Limit Awareness**: Real-time rate limit monitoring and warnings
+- **Robust Error Handling**: Comprehensive validation and helpful error messages
+- **Progress Tracking**: Verbose mode with detailed progress information
+- **GitHub CLI Integration**: Automatic authentication using GitHub CLI
+- **Timesheet Ready**: Special output format optimized for copying to timesheets
+- **Commit Analytics**: Statistical analysis and commit type categorization
 
 ## Installation
 
@@ -52,7 +53,22 @@ github-commits --help
 
 ## Usage
 
-### Basic Usage
+### Quick Start with Auto-Detection
+
+The easiest way to use the tool is with git auto-detection. Just run it from any git repository:
+
+```bash
+# Auto-detect repository from current directory
+node titles.js --auto --start "7 days ago" --end "today"
+
+# Get your commits for timesheet entry
+node titles.js --auto --start "yesterday" --end "today" --author your-username --format timesheet
+
+# Generate a summary report
+node titles.js --auto --start "1 week ago" --end "today" --format summary --verbose
+```
+
+### Basic Usage (Manual)
 
 ```bash
 # Fetch commits from last week (uses GitHub CLI if logged in)
@@ -157,10 +173,14 @@ node titles.js \
 
 ## Command Line Options
 
-### Required (unless using --config)
+### Auto-Detection
+
+- `--auto` - Auto-detect owner, repo, and branch from current git repository (requires being inside a git repo with GitHub remotes)
+
+### Required (unless using --config or --auto)
 
 - `--owner <orgOrUser>` - GitHub organization or username
-- `--repo <repo>` - Repository name
+- `--repo <repo>` - Repository name  
 - `--branch <branch>` - Branch name
 - `--start <date>` - Start date (ISO, YYYY-MM-DD, or relative)
 - `--end <date>` - End date (ISO, YYYY-MM-DD, or relative)
@@ -470,13 +490,125 @@ node titles.js \
   --output team-activity.md
 ```
 
+## Testing
+
+This project includes a comprehensive test suite with 92 tests covering all major functionality.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run tests with verbose output
+npm run test:verbose
+
+# Run specific test file
+npx jest tests/utils.test.js
+
+# Run tests matching a pattern
+npx jest --testNamePattern="parseRelativeDate"
+```
+
+### Test Structure
+
+- **`tests/utils.test.js`** - Unit tests for core utility functions
+
+  - Date parsing (`parseRelativeDate`) - handles "today", "7 days ago", etc.
+  - Commit categorization (`categorizeCommit`) - conventional commit types
+  - Statistics generation (`generateStats`) - commit analytics
+  - Configuration loading (`loadConfig`) - JSON file validation
+  - Input validation functions
+
+- **`tests/cli.test.js`** - Integration tests for CLI functionality
+
+  - Command-line argument parsing and validation
+  - Help message display
+  - Configuration file handling
+  - Input validation and error handling
+
+- **`tests/github-api.test.js`** - Tests for GitHub API integration (mocked)
+
+  - API response handling
+  - Error handling and retry logic
+  - Rate limiting and pagination
+
+- **`tests/output-formatting.test.js`** - Tests for output formatting
+
+  - All supported formats (text, grouped, timesheet, JSON, CSV, Markdown, HTML)
+  - Date formatting utilities
+  - Data transformation logic
+
+- **`tests/test-helper.js`** - Common testing utilities and mocks
+
+### Test Coverage
+
+The test suite covers:
+
+- Core utility functions (date parsing, categorization, stats)
+- CLI argument validation and error handling
+- Output formatting for all supported formats
+- GitHub API integration (mocked)
+- Configuration file loading and validation
+
+### Testing Approach
+
+Since `titles.js` is a CLI script rather than a module, the tests use several strategies:
+
+1. **Function Extraction** - Core functions are extracted and tested in isolation
+2. **CLI Testing** - Full CLI commands are tested using `child_process`
+3. **Mocked APIs** - GitHub API calls are mocked to test integration without network requests
+4. **Temporary Files** - Configuration and output files are created in temporary directories
+
+### Test Configuration
+
+Tests are configured using `jest.config.js` with:
+
+- Node.js test environment
+- 15 second timeout for CLI tests
+- Coverage reporting available
+- Mock clearing between tests
+
+**Notes:**
+
+- Tests avoid making real GitHub API calls
+- Temporary files are automatically cleaned up
+- CLI tests expect errors due to authentication/invalid repositories (this is normal)
+- The main focus is on validation, formatting, and error handling logic
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+4. Run tests: `npm test`
+5. Use conventional commits (e.g., `feat:`, `fix:`, `docs:`)
+6. Submit a pull request
+
+### Development Workflow
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+npm run test:coverage
+
+# Test release (dry run)
+npm run release:dry
+
+# Manual release (if needed)
+npm run release:patch
+```
+
+See [RELEASING.md](./RELEASING.md) for detailed release process documentation.
 
 ## License
 

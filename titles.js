@@ -26,7 +26,10 @@ const { dirname, resolve } = require("path");
 const HELP = `
 Fetch commit titles from a GitHub repo/branch within a date range.
 
-Required (unless using --config):
+Git Auto-Detection:
+  --auto                          Auto-detect owner, repo, and branch from current git repository
+
+Required (unless using --config or --auto):
   --owner <orgOrUser>
   --repo <repo>
   --branch <branch>
@@ -84,7 +87,12 @@ Notes:
 - Configuration file values are overridden by command line arguments.
 
 Examples:
-  GITHUB_TOKEN=ghp_xxx node titles.js --owner iGen-7 --repo fleet-selector-UI --branch main --start 2025-08-01 --end 2025-08-22 --author martinmcdermid --exclude-merges --format json
+  # Auto-detect from current git repository
+  node titles.js --auto --start "7 days ago" --end "today" --format timesheet
+  node titles.js --auto --start "1 week ago" --end "today" --author your-username --format summary --verbose
+
+  # Traditional usage with explicit parameters
+  GITHUB_TOKEN=ghp_xxx node titles.js --owner user --repo repo --branch main --start 2025-08-01 --end 2025-08-22 --author username --exclude-merges --format json
   node titles.js --config my-config.json --output commits.txt
   node titles.js --owner user --repo repo --start "7 days ago" --end "today" --format grouped --output commits.txt
   node titles.js --owner user --repo repo --start "7 days ago" --end "today" --format timesheet --output timesheet.txt
@@ -364,6 +372,175 @@ function ensureOutputDirectory(outputPath) {
 }
 
 /**
+ * Git Auto-Detection Functions
+ * ============================
+ * Functions to automatically detect git repository information from the current working directory
+ */
+
+/**
+ * Detects if the current directory is inside a git repository
+ * 
+ * @returns {boolean} True if inside a git repository
+ */
+function isInGitRepository() {
+  try {
+    const { execSync } = require("child_process");
+    execSync("git rev-parse --git-dir", { stdio: "pipe" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Gets the current git branch name
+ * 
+ * @returns {string|null} Current branch name or null if not in a git repo
+ */
+function getCurrentBranch() {
+  try {
+    const { execSync } = require("child_process");
+    const branch = execSync("git rev-parse --abbrev-ref HEAD", { 
+      encoding: "utf8", 
+      stdio: "pipe" 
+    }).trim();
+    return branch === "HEAD" ? "main" : branch; // Handle detached HEAD
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extracts owner and repo from git remote URL
+ * 
+ * @param {string} remoteUrl - Git remote URL (HTTPS or SSH)
+ * @returns {Object|null} Object with owner and repo properties, or null if parsing fails
+ * 
+ * @example
+ * parseGitRemote("https://github.com/user/repo.git") // Returns { owner: "user", repo: "repo" }
+ * parseGitRemote("git@github.com:user/repo.git") // Returns { owner: "user", repo: "repo" }
+ */
+function parseGitRemote(remoteUrl) {
+  if (!remoteUrl) return null;
+
+  // Handle HTTPS URLs: https://github.com/owner/repo.git
+  const httpsMatch = remoteUrl.match(/https:\/\/github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?$/);
+  if (httpsMatch) {
+    return { owner: httpsMatch[1], repo: httpsMatch[2] };
+  }
+
+  // Handle SSH URLs: git@github.com:owner/repo.git
+  const sshMatch = remoteUrl.match(/git@github\.com:([^\/]+)\/([^\/]+?)(?:\.git)?$/);
+  if (sshMatch) {
+    return { owner: sshMatch[1], repo: sshMatch[2] };
+  }
+
+  // Handle GitHub CLI URLs: gh:owner/repo
+  const ghMatch = remoteUrl.match(/gh:([^\/]+)\/([^\/]+)$/);
+  if (ghMatch) {
+    return { owner: ghMatch[1], repo: ghMatch[2] };
+  }
+
+  return null;
+}
+
+/**
+ * Gets git remote information from the current repository
+ * 
+ * @param {string} remoteName - Name of the remote (default: "origin")
+ * @returns {Object|null} Object with owner and repo, or null if not found
+ */
+function getGitRemoteInfo(remoteName = "origin") {
+  try {
+    const { execSync } = require("child_process");
+    const remoteUrl = execSync(`git remote get-url ${remoteName}`, {
+      encoding: "utf8",
+      stdio: "pipe"
+    }).trim();
+    
+    return parseGitRemote(remoteUrl);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Auto-detects git repository information from the current working directory
+ * 
+ * Attempts to extract:
+ * - Owner (GitHub username or organization)
+ * - Repository name
+ * - Current branch
+ * - Remote URL information
+ * 
+ * @returns {Object} Object containing detected git information
+ * 
+ * @example
+ * const gitInfo = autoDetectGitInfo();
+ * // Returns: { owner: "user", repo: "repo", branch: "main", isGitRepo: true, remotes: [...] }
+ */
+function autoDetectGitInfo() {
+  const info = {
+    isGitRepo: false,
+    owner: null,
+    repo: null,
+    branch: null,
+    remotes: [],
+    workingDir: process.cwd()
+  };
+
+  // Check if we're in a git repository
+  if (!isInGitRepository()) {
+    return info;
+  }
+
+  info.isGitRepo = true;
+  info.branch = getCurrentBranch();
+
+  try {
+    const { execSync } = require("child_process");
+    
+    // Get all remotes
+    const remotesOutput = execSync("git remote -v", { 
+      encoding: "utf8", 
+      stdio: "pipe" 
+    }).trim();
+
+    const remoteLines = remotesOutput.split("\n").filter(line => line.includes("(fetch)"));
+    
+    for (const line of remoteLines) {
+      const [name, url] = line.split("\t");
+      const cleanUrl = url.replace(" (fetch)", "");
+      const parsed = parseGitRemote(cleanUrl);
+      
+      if (parsed) {
+        info.remotes.push({
+          name: name.trim(),
+          url: cleanUrl,
+          ...parsed
+        });
+      }
+    }
+
+    // Prefer origin remote, then upstream, then first available
+    const preferredRemote = info.remotes.find(r => r.name === "origin") ||
+                           info.remotes.find(r => r.name === "upstream") ||
+                           info.remotes[0];
+
+    if (preferredRemote) {
+      info.owner = preferredRemote.owner;
+      info.repo = preferredRemote.repo;
+    }
+
+  } catch (err) {
+    // Git commands failed, but we're still in a git repo
+    // This might be a newly initialized repo with no remotes
+  }
+
+  return info;
+}
+
+/**
  * Validation Functions
  * ===================
  * Functions to validate and sanitize user input parameters
@@ -560,6 +737,10 @@ function parseArgs(argv) {
     }
     if (a === "--stats") {
       args.stats = true;
+      continue;
+    }
+    if (a === "--auto") {
+      args.auto = true;
       continue;
     }
     if (flags.has(a)) {
@@ -1180,8 +1361,29 @@ async function main() {
       config = loadConfig(args.config);
     }
 
-    // Merge config with command line args (CLI args take precedence)
-    const finalArgs = { ...config, ...args };
+    // Auto-detect git repository information if --auto flag is used
+    let gitInfo = {};
+    if (args.auto) {
+      gitInfo = autoDetectGitInfo();
+      
+      if (!gitInfo.isGitRepo) {
+        throw new Error("--auto flag requires being run from within a git repository");
+      }
+      
+      if (!gitInfo.owner || !gitInfo.repo) {
+        throw new Error("Could not auto-detect GitHub repository information. Ensure you have a GitHub remote configured (origin/upstream).");
+      }
+      
+      if (args.verbose) {
+        console.error(`Auto-detected: ${gitInfo.owner}/${gitInfo.repo} (${gitInfo.branch})`);
+        if (gitInfo.remotes.length > 1) {
+          console.error(`Available remotes: ${gitInfo.remotes.map(r => r.name).join(", ")}`);
+        }
+      }
+    }
+
+    // Merge config with git auto-detection and command line args (CLI args take precedence)
+    const finalArgs = { ...config, ...gitInfo, ...args };
 
     // Validate required arguments
     const required = ["owner", "repo", "branch", "start", "end"];

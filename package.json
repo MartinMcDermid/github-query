@@ -8,7 +8,16 @@
   },
   "scripts": {
     "start": "node titles.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose",
+    "release": "release-it",
+    "release:patch": "release-it patch",
+    "release:minor": "release-it minor",
+    "release:major": "release-it major",
+    "release:prerelease": "release-it prerelease",
+    "release:dry": "release-it --dry-run"
   },
   "keywords": [
     "github",
@@ -33,5 +42,10 @@
   "bugs": {
     "url": "https://github.com/MartinMcDermid/github-query/issues"
   },
-  "homepage": "https://github.com/MartinMcDermid/github-query#readme"
+  "homepage": "https://github.com/MartinMcDermid/github-query#readme",
+  "devDependencies": {
+    "@release-it/conventional-changelog": "^10.0.1",
+    "jest": "^30.1.3",
+    "release-it": "^19.0.4"
+  }
 }
