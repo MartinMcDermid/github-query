@@ -10,7 +10,9 @@
     "release": true,
     "draft": false,
     "preRelease": false,
-    "autoGenerate": true,
+    "autoGenerate": false,
+    "releaseName": "v${version}",
+    "releaseNotes": "${changelog}",
     "assets": []
   },
   "npm": {
