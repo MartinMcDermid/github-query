@@ -168,11 +168,9 @@ jspm_packages/
 
 # Output files
 *.md
-*.json
 *.csv
 *.html
 !README.md
-!package.json
 !config.example.json
 
 # OS generated files
