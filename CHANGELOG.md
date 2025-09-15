@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/MartinMcDermid/github-query/compare/v1.0.1...v1.0.2) (2025-09-15)
+
+
+### Bug Fixes
+
+* **release:** use boolean github.autoGenerate per REST API ([53e048d](https://github.com/MartinMcDermid/github-query/commit/53e048df8e3de0871cdc2b88b591d113a653c5ad))
+
 ## 1.0.1 (2025-09-15)
 
 
