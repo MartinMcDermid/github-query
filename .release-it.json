@@ -10,9 +10,7 @@
     "release": true,
     "draft": false,
     "preRelease": false,
-    "autoGenerate": {
-      "notes": true
-    },
+    "autoGenerate": true,
     "assets": []
   },
   "npm": {
