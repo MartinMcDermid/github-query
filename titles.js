@@ -137,14 +137,14 @@ function parseRelativeDate(dateStr) {
     const num = parseInt(amount);
 
     switch (unit) {
-    case "day":
-      return new Date(now.getTime() - num * 24 * 60 * 60 * 1000);
-    case "week":
-      return new Date(now.getTime() - num * 7 * 24 * 60 * 60 * 1000);
-    case "month":
-      return new Date(now.getFullYear(), now.getMonth() - num, now.getDate());
-    case "year":
-      return new Date(now.getFullYear() - num, now.getMonth(), now.getDate());
+      case "day":
+        return new Date(now.getTime() - num * 24 * 60 * 60 * 1000);
+      case "week":
+        return new Date(now.getTime() - num * 7 * 24 * 60 * 60 * 1000);
+      case "month":
+        return new Date(now.getFullYear(), now.getMonth() - num, now.getDate());
+      case "year":
+        return new Date(now.getFullYear() - num, now.getMonth(), now.getDate());
     }
   }
 
@@ -379,7 +379,7 @@ function ensureOutputDirectory(outputPath) {
 
 /**
  * Detects if the current directory is inside a git repository
- * 
+ *
  * @returns {boolean} True if inside a git repository
  */
 function isInGitRepository() {
@@ -394,15 +394,15 @@ function isInGitRepository() {
 
 /**
  * Gets the current git branch name
- * 
+ *
  * @returns {string|null} Current branch name or null if not in a git repo
  */
 function getCurrentBranch() {
   try {
     const { execSync } = require("child_process");
-    const branch = execSync("git rev-parse --abbrev-ref HEAD", { 
-      encoding: "utf8", 
-      stdio: "pipe" 
+    const branch = execSync("git rev-parse --abbrev-ref HEAD", {
+      encoding: "utf8",
+      stdio: "pipe",
     }).trim();
     return branch === "HEAD" ? "main" : branch; // Handle detached HEAD
   } catch {
@@ -412,10 +412,10 @@ function getCurrentBranch() {
 
 /**
  * Extracts owner and repo from git remote URL
- * 
+ *
  * @param {string} remoteUrl - Git remote URL (HTTPS or SSH)
  * @returns {Object|null} Object with owner and repo properties, or null if parsing fails
- * 
+ *
  * @example
  * parseGitRemote("https://github.com/user/repo.git") // Returns { owner: "user", repo: "repo" }
  * parseGitRemote("git@github.com:user/repo.git") // Returns { owner: "user", repo: "repo" }
@@ -424,13 +424,17 @@ function parseGitRemote(remoteUrl) {
   if (!remoteUrl) return null;
 
   // Handle HTTPS URLs: https://github.com/owner/repo.git
-  const httpsMatch = remoteUrl.match(/https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/);
+  const httpsMatch = remoteUrl.match(
+    /https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/
+  );
   if (httpsMatch) {
     return { owner: httpsMatch[1], repo: httpsMatch[2] };
   }
 
   // Handle SSH URLs: git@github.com:owner/repo.git
-  const sshMatch = remoteUrl.match(/git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/);
+  const sshMatch = remoteUrl.match(
+    /git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/
+  );
   if (sshMatch) {
     return { owner: sshMatch[1], repo: sshMatch[2] };
   }
@@ -446,7 +450,7 @@ function parseGitRemote(remoteUrl) {
 
 /**
  * Gets git remote information from the current repository
- * 
+ *
  * @param {string} remoteName - Name of the remote (default: "origin")
  * @returns {Object|null} Object with owner and repo, or null if not found
  */
@@ -455,9 +459,9 @@ function _getGitRemoteInfo(remoteName = "origin") {
     const { execSync } = require("child_process");
     const remoteUrl = execSync(`git remote get-url ${remoteName}`, {
       encoding: "utf8",
-      stdio: "pipe"
+      stdio: "pipe",
     }).trim();
-    
+
     return parseGitRemote(remoteUrl);
   } catch {
     return null;
@@ -466,15 +470,15 @@ function _getGitRemoteInfo(remoteName = "origin") {
 
 /**
  * Auto-detects git repository information from the current working directory
- * 
+ *
  * Attempts to extract:
  * - Owner (GitHub username or organization)
  * - Repository name
  * - Current branch
  * - Remote URL information
- * 
+ *
  * @returns {Object} Object containing detected git information
- * 
+ *
  * @example
  * const gitInfo = autoDetectGitInfo();
  * // Returns: { owner: "user", repo: "repo", branch: "main", isGitRepo: true, remotes: [...] }
@@ -486,7 +490,7 @@ function autoDetectGitInfo() {
     repo: null,
     branch: null,
     remotes: [],
-    workingDir: process.cwd()
+    workingDir: process.cwd(),
   };
 
   // Check if we're in a git repository
@@ -499,39 +503,41 @@ function autoDetectGitInfo() {
 
   try {
     const { execSync } = require("child_process");
-    
+
     // Get all remotes
-    const remotesOutput = execSync("git remote -v", { 
-      encoding: "utf8", 
-      stdio: "pipe" 
+    const remotesOutput = execSync("git remote -v", {
+      encoding: "utf8",
+      stdio: "pipe",
     }).trim();
 
-    const remoteLines = remotesOutput.split("\n").filter(line => line.includes("(fetch)"));
-    
+    const remoteLines = remotesOutput
+      .split("\n")
+      .filter((line) => line.includes("(fetch)"));
+
     for (const line of remoteLines) {
       const [name, url] = line.split("\t");
       const cleanUrl = url.replace(" (fetch)", "");
       const parsed = parseGitRemote(cleanUrl);
-      
+
       if (parsed) {
         info.remotes.push({
           name: name.trim(),
           url: cleanUrl,
-          ...parsed
+          ...parsed,
         });
       }
     }
 
     // Prefer origin remote, then upstream, then first available
-    const preferredRemote = info.remotes.find(r => r.name === "origin") ||
-                           info.remotes.find(r => r.name === "upstream") ||
-                           info.remotes[0];
+    const preferredRemote =
+      info.remotes.find((r) => r.name === "origin") ||
+      info.remotes.find((r) => r.name === "upstream") ||
+      info.remotes[0];
 
     if (preferredRemote) {
       info.owner = preferredRemote.owner;
       info.repo = preferredRemote.repo;
     }
-
   } catch {
     // Git commands failed, but we're still in a git repo
     // This might be a newly initialized repo with no remotes
@@ -679,7 +685,45 @@ function validateRegex(pattern, name) {
   if (!pattern) return null;
 
   try {
-    return new RegExp(pattern, "i");
+    // Basic hardening: limit length and reject some hazardous constructs
+    if (typeof pattern !== "string") {
+      throw new Error(`Pattern for --${name} must be a string`);
+    }
+
+    const trimmed = pattern.trim();
+    if (trimmed.length === 0) {
+      throw new Error(`Pattern for --${name} must not be empty`);
+    }
+
+    // Length cap to reduce ReDoS risk
+    if (trimmed.length > 500) {
+      throw new Error(`Pattern for --${name} is too long (max 500 characters)`);
+    }
+
+    // Block some constructs commonly involved in catastrophic backtracking
+    const dangerous = [
+      /\\\d+/, // backreferences like \1
+      /\(\?[!<=]/, // lookarounds (?=, (?!, (?<=, (?<!)
+      /\.(\*|\+){2,}/, // ..**, ..++
+      /\((?:[^()]*|\([^()]*\))*\)(?:\+|\*){2,}/, // group with stacked quantifiers
+    ];
+    for (const rx of dangerous) {
+      if (rx.test(trimmed)) {
+        throw new Error(
+          `Pattern for --${name} contains potentially dangerous constructs`
+        );
+      }
+    }
+
+    // Prefer RE2 engine if available to avoid catastrophic backtracking
+    try {
+      // eslint-disable-next-line global-require, import/no-extraneous-dependencies
+      const RE2 = require("re2");
+      return new RE2(trimmed, "i");
+    } catch {
+      // Fallback to native RegExp if RE2 not installed
+      return new RegExp(trimmed, "i");
+    }
   } catch (_err) {
     throw new Error(`Invalid regex pattern for --${name}: ${_err.message}`);
   }
@@ -787,7 +831,7 @@ function firstLine(msg = "") {
 
 function toCSVCell(s) {
   const v = (s ?? "").toString();
-  if (/[",\n]/.test(v)) return `"${v.replace(/"/g, "\"\"")}"`;
+  if (/[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
   return v;
 }
 
@@ -951,7 +995,8 @@ async function fetchCommits({
       } else if (resp.status === 401) {
         errorMsg = "Authentication failed: check your GitHub token";
       } else if (resp.status === 403) {
-        errorMsg = "Access forbidden: check repository permissions and rate limits";
+        errorMsg =
+          "Access forbidden: check repository permissions and rate limits";
       } else if (resp.status === 422) {
         errorMsg = "Invalid request: check branch name and date parameters";
       }
@@ -1258,7 +1303,7 @@ function outputHTML(items, args, startISO, endISO) {
     "<head>",
     "<title>Commit History</title>",
     "<style>",
-    "body { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }",
+    'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }',
     ".header { background: #f6f8fa; padding: 20px; border-radius: 6px; margin-bottom: 20px; }",
     ".date-group { margin-bottom: 30px; }",
     ".date-header { background: #f1f3f4; padding: 10px 15px; border-radius: 4px; margin-bottom: 15px; font-weight: 600; color: #24292e; }",
@@ -1272,27 +1317,27 @@ function outputHTML(items, args, startISO, endISO) {
     "</style>",
     "</head>",
     "<body>",
-    "<div class=\"header\">",
+    '<div class="header">',
     `<h1>Commit History: ${args.owner}/${args.repo}</h1>`,
     `<p><strong>Branch:</strong> ${args.branch}</p>`,
     `<p><strong>Date Range:</strong> ${startISO} to ${endISO}</p>`,
     `<p><strong>Total Commits:</strong> ${items.length}</p>`,
     "</div>",
-    "<div class=\"commits\">",
+    '<div class="commits">',
   ];
 
   const grouped = groupByDate(items);
 
   for (const [date, dateItems] of Object.entries(grouped)) {
     html.push(
-      "<div class=\"date-group\">",
+      '<div class="date-group">',
       `<div class="date-header">${date} (${dateItems.length} commits)</div>`
     );
 
     for (const it of dateItems) {
       const author = it.author_login || "Unknown";
       html.push(
-        "<div class=\"commit\">",
+        '<div class="commit">',
         `<div class="title"><a href="${it.html_url}" target="_blank">${it.title}</a></div>`,
         `<div class="author">${author}</div>`,
         "</div>"
@@ -1365,19 +1410,29 @@ async function main() {
     let gitInfo = {};
     if (args.auto) {
       gitInfo = autoDetectGitInfo();
-      
+
       if (!gitInfo.isGitRepo) {
-        throw new Error("--auto flag requires being run from within a git repository");
+        throw new Error(
+          "--auto flag requires being run from within a git repository"
+        );
       }
-      
+
       if (!gitInfo.owner || !gitInfo.repo) {
-        throw new Error("Could not auto-detect GitHub repository information. Ensure you have a GitHub remote configured (origin/upstream).");
+        throw new Error(
+          "Could not auto-detect GitHub repository information. Ensure you have a GitHub remote configured (origin/upstream)."
+        );
       }
-      
+
       if (args.verbose) {
-        console.error(`Auto-detected: ${gitInfo.owner}/${gitInfo.repo} (${gitInfo.branch})`);
+        console.error(
+          `Auto-detected: ${gitInfo.owner}/${gitInfo.repo} (${gitInfo.branch})`
+        );
         if (gitInfo.remotes.length > 1) {
-          console.error(`Available remotes: ${gitInfo.remotes.map(r => r.name).join(", ")}`);
+          console.error(
+            `Available remotes: ${gitInfo.remotes
+              .map((r) => r.name)
+              .join(", ")}`
+          );
         }
       }
     }
@@ -1526,41 +1581,41 @@ async function main() {
     let output;
 
     switch (format) {
-    case "text":
-      output = items
-        .map((it) => it.title)
-        .filter(Boolean)
-        .join("\n");
-      break;
-    case "grouped":
-      output = outputGrouped(items);
-      break;
-    case "timesheet":
-      output = outputTimesheet(items);
-      break;
-    case "summary":
-      output = outputSummary(items, finalArgs, startISO, endISO);
-      break;
-    case "json":
-      output = outputJSON(items, finalArgs, startISO, endISO);
-      break;
-    case "ndjson":
-      output = outputNDJSON(items);
-      break;
-    case "csv":
-      output = outputCSV(items);
-      break;
-    case "markdown":
-      output = outputMarkdown(items, finalArgs, startISO, endISO);
-      break;
-    case "html":
-      output = outputHTML(items, finalArgs, startISO, endISO);
-      break;
-    default:
-      console.error(
-        `Unknown --format ${finalArgs.format}. Use text|grouped|timesheet|summary|json|ndjson|csv|markdown|html.`
-      );
-      process.exit(2);
+      case "text":
+        output = items
+          .map((it) => it.title)
+          .filter(Boolean)
+          .join("\n");
+        break;
+      case "grouped":
+        output = outputGrouped(items);
+        break;
+      case "timesheet":
+        output = outputTimesheet(items);
+        break;
+      case "summary":
+        output = outputSummary(items, finalArgs, startISO, endISO);
+        break;
+      case "json":
+        output = outputJSON(items, finalArgs, startISO, endISO);
+        break;
+      case "ndjson":
+        output = outputNDJSON(items);
+        break;
+      case "csv":
+        output = outputCSV(items);
+        break;
+      case "markdown":
+        output = outputMarkdown(items, finalArgs, startISO, endISO);
+        break;
+      case "html":
+        output = outputHTML(items, finalArgs, startISO, endISO);
+        break;
+      default:
+        console.error(
+          `Unknown --format ${finalArgs.format}. Use text|grouped|timesheet|summary|json|ndjson|csv|markdown|html.`
+        );
+        process.exit(2);
     }
 
     writeOutput(output, finalArgs.output);
