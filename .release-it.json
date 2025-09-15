@@ -10,9 +10,8 @@
     "release": true,
     "draft": false,
     "preRelease": false,
-    "autoGenerate": false,
+    "autoGenerate": true,
     "releaseName": "v${version}",
-    "releaseNotesFile": ".RELEASE_NOTES.md",
     "assets": []
   },
   "npm": {
@@ -22,7 +21,6 @@
   "hooks": {
     "before:init": ["npm test"],
     "after:bump": "npm run build --if-present",
-    "before:github.release": "node -e \"const fs=require('fs');const t=fs.readFileSync('CHANGELOG.md','utf8');const m=t.match(/##[\\s\\S]*?(?=\\n##\\s|$)/);fs.writeFileSync('.RELEASE_NOTES.md', m?m[0]:'');\"",
     "after:release": "echo Successfully released ${name} v${version} to ${repo.repository}."
   },
   "plugins": {
