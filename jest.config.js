@@ -1,25 +1,25 @@
 module.exports = {
   // Test environment
-  testEnvironment: 'node',
+  testEnvironment: "node",
   
   // Test file patterns
   testMatch: [
-    '**/tests/**/*.test.js',
-    '**/__tests__/**/*.js'
+    "**/tests/**/*.test.js",
+    "**/__tests__/**/*.js"
   ],
   
   // Coverage configuration
   collectCoverage: false,
   collectCoverageFrom: [
-    'titles.js',
-    '!**/node_modules/**',
-    '!**/tests/**'
+    "titles.js",
+    "!**/node_modules/**",
+    "!**/tests/**"
   ],
-  coverageDirectory: 'coverage',
+  coverageDirectory: "coverage",
   coverageReporters: [
-    'text',
-    'lcov',
-    'html'
+    "text",
+    "lcov",
+    "html"
   ],
   
   // Setup and teardown
@@ -40,12 +40,12 @@ module.exports = {
   transform: {},
   
   // Module paths
-  moduleDirectories: ['node_modules', '<rootDir>'],
+  moduleDirectories: ["node_modules", "<rootDir>"],
   
   // Ignore patterns
   testPathIgnorePatterns: [
-    '/node_modules/',
-    '/coverage/'
+    "/node_modules/",
+    "/coverage/"
   ],
   
   // Error handling

@@ -3,9 +3,9 @@
  * Common functions and mocks for testing
  */
 
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
 /**
  * Create a temporary file for testing
@@ -13,7 +13,7 @@ const os = require('os');
  * @param {string} content 
  * @returns {string} Full path to the temporary file
  */
-function createTempFile(filename, content = '') {
+function createTempFile(filename, content = "") {
   const tempDir = os.tmpdir();
   const filePath = path.join(tempDir, filename);
   fs.writeFileSync(filePath, content);
@@ -29,7 +29,7 @@ function cleanupTempFiles(filePaths) {
     if (fs.existsSync(filePath)) {
       try {
         fs.unlinkSync(filePath);
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
     }
@@ -47,9 +47,9 @@ function mockGitHubResponse(commits = [], status = 200) {
     ok: status >= 200 && status < 300,
     status,
     headers: new Map([
-      ['x-ratelimit-remaining', '4999'],
-      ['x-ratelimit-limit', '5000'],
-      ['x-ratelimit-reset', Math.floor(Date.now() / 1000) + 3600]
+      ["x-ratelimit-remaining", "4999"],
+      ["x-ratelimit-limit", "5000"],
+      ["x-ratelimit-reset", Math.floor(Date.now() / 1000) + 3600]
     ]),
     json: async () => commits
   };
@@ -62,12 +62,12 @@ function mockGitHubResponse(commits = [], status = 200) {
  */
 function createMockCommits(count = 3) {
   const commits = [];
-  const baseDate = new Date('2025-01-15T10:00:00Z');
+  const baseDate = new Date("2025-01-15T10:00:00Z");
   
   for (let i = 0; i < count; i++) {
     const commitDate = new Date(baseDate.getTime() + (i * 24 * 60 * 60 * 1000));
     commits.push({
-      sha: `abc${i.toString().padStart(3, '0')}`,
+      sha: `abc${i.toString().padStart(3, "0")}`,
       commit: {
         message: `feat: add feature ${i + 1}`,
         author: {
@@ -78,7 +78,7 @@ function createMockCommits(count = 3) {
       author: {
         login: `user${i + 1}`
       },
-      html_url: `https://github.com/test/repo/commit/abc${i.toString().padStart(3, '0')}`
+      html_url: `https://github.com/test/repo/commit/abc${i.toString().padStart(3, "0")}`
     });
   }
   
@@ -95,15 +95,15 @@ function mockConsole() {
   const warns = [];
   
   console.log = jest.fn((...args) => {
-    logs.push(args.join(' '));
+    logs.push(args.join(" "));
   });
   
   console.error = jest.fn((...args) => {
-    errors.push(args.join(' '));
+    errors.push(args.join(" "));
   });
   
   console.warn = jest.fn((...args) => {
-    warns.push(args.join(' '));
+    warns.push(args.join(" "));
   });
   
   return {
@@ -123,8 +123,8 @@ function mockConsole() {
  * Since titles.js is a CLI script, this helper extracts testable functions
  */
 function extractFunctionsFromTitles() {
-  const titlesPath = path.join(__dirname, '..', 'titles.js');
-  const content = fs.readFileSync(titlesPath, 'utf8');
+  const titlesPath = path.join(__dirname, "..", "titles.js");
+  const content = fs.readFileSync(titlesPath, "utf8");
   
   // Extract function definitions using regex
   const functions = {};
@@ -137,7 +137,7 @@ function extractFunctionsFromTitles() {
     
     try {
       // Create a sandbox to evaluate the function
-      const vm = require('vm');
+      const vm = require("vm");
       const context = {
         require,
         console,
@@ -154,23 +154,23 @@ function extractFunctionsFromTitles() {
         Object,
         Error,
         SyntaxError,
-        __dirname: path.join(__dirname, '..'),
-        __filename: path.join(__dirname, '..', 'titles.js')
+        __dirname: path.join(__dirname, ".."),
+        __filename: path.join(__dirname, "..", "titles.js")
       };
       
       // Add Node.js modules to context
-      context.fs = require('fs');
-      context.path = require('path');
-      context.os = require('os');
-      context.yaml = require('yaml');
+      context.fs = require("fs");
+      context.path = require("path");
+      context.os = require("os");
+      context.yaml = require("yaml");
       
       vm.runInNewContext(funcCode, context);
-      if (context[funcName] && typeof context[funcName] === 'function') {
+      if (context[funcName] && typeof context[funcName] === "function") {
         functions[funcName] = context[funcName];
       }
-    } catch (e) {
+    } catch (_e) {
       // Some functions might have dependencies that can't be easily mocked
-      console.warn(`Could not extract function ${funcName}:`, e.message);
+      console.warn(`Could not extract function ${funcName}:`, _e.message);
     }
   }
   

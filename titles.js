@@ -137,14 +137,14 @@ function parseRelativeDate(dateStr) {
     const num = parseInt(amount);
 
     switch (unit) {
-      case "day":
-        return new Date(now.getTime() - num * 24 * 60 * 60 * 1000);
-      case "week":
-        return new Date(now.getTime() - num * 7 * 24 * 60 * 60 * 1000);
-      case "month":
-        return new Date(now.getFullYear(), now.getMonth() - num, now.getDate());
-      case "year":
-        return new Date(now.getFullYear() - num, now.getMonth(), now.getDate());
+    case "day":
+      return new Date(now.getTime() - num * 24 * 60 * 60 * 1000);
+    case "week":
+      return new Date(now.getTime() - num * 7 * 24 * 60 * 60 * 1000);
+    case "month":
+      return new Date(now.getFullYear(), now.getMonth() - num, now.getDate());
+    case "year":
+      return new Date(now.getFullYear() - num, now.getMonth(), now.getDate());
     }
   }
 
@@ -280,7 +280,7 @@ function getGitHubCLIToken() {
         return githubHost.oauth_token;
       }
     }
-  } catch (err) {
+  } catch {
     // Silently fail - GitHub CLI might not be installed or configured
     // This could be due to missing yaml package, invalid config, etc.
   }
@@ -295,7 +295,7 @@ function getGitHubCLIToken() {
     if (token && token.length > 0) {
       return token;
     }
-  } catch (err) {
+  } catch {
     // Silently fail - gh command might not be available or user not authenticated
   }
 
@@ -336,11 +336,11 @@ function loadConfig(configPath) {
     }
 
     return config;
-  } catch (err) {
-    if (err instanceof SyntaxError) {
-      throw new Error(`Invalid JSON in configuration file: ${err.message}`);
+  } catch (_err) {
+    if (_err instanceof SyntaxError) {
+      throw new Error(`Invalid JSON in configuration file: ${_err.message}`);
     }
-    throw err;
+    throw _err;
   }
 }
 
@@ -362,9 +362,9 @@ function ensureOutputDirectory(outputPath) {
     if (dir !== "." && !existsSync(dir)) {
       try {
         mkdirSync(dir, { recursive: true });
-      } catch (err) {
+      } catch (_err) {
         console.warn(
-          `Warning: Could not create output directory ${dir}: ${err.message}`
+          `Warning: Could not create output directory ${dir}: ${_err.message}`
         );
       }
     }
@@ -424,19 +424,19 @@ function parseGitRemote(remoteUrl) {
   if (!remoteUrl) return null;
 
   // Handle HTTPS URLs: https://github.com/owner/repo.git
-  const httpsMatch = remoteUrl.match(/https:\/\/github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?$/);
+  const httpsMatch = remoteUrl.match(/https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/);
   if (httpsMatch) {
     return { owner: httpsMatch[1], repo: httpsMatch[2] };
   }
 
   // Handle SSH URLs: git@github.com:owner/repo.git
-  const sshMatch = remoteUrl.match(/git@github\.com:([^\/]+)\/([^\/]+?)(?:\.git)?$/);
+  const sshMatch = remoteUrl.match(/git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/);
   if (sshMatch) {
     return { owner: sshMatch[1], repo: sshMatch[2] };
   }
 
   // Handle GitHub CLI URLs: gh:owner/repo
-  const ghMatch = remoteUrl.match(/gh:([^\/]+)\/([^\/]+)$/);
+  const ghMatch = remoteUrl.match(/gh:([^/]+)\/([^/]+)$/);
   if (ghMatch) {
     return { owner: ghMatch[1], repo: ghMatch[2] };
   }
@@ -450,7 +450,7 @@ function parseGitRemote(remoteUrl) {
  * @param {string} remoteName - Name of the remote (default: "origin")
  * @returns {Object|null} Object with owner and repo, or null if not found
  */
-function getGitRemoteInfo(remoteName = "origin") {
+function _getGitRemoteInfo(remoteName = "origin") {
   try {
     const { execSync } = require("child_process");
     const remoteUrl = execSync(`git remote get-url ${remoteName}`, {
@@ -532,7 +532,7 @@ function autoDetectGitInfo() {
       info.repo = preferredRemote.repo;
     }
 
-  } catch (err) {
+  } catch {
     // Git commands failed, but we're still in a git repo
     // This might be a newly initialized repo with no remotes
   }
@@ -680,8 +680,8 @@ function validateRegex(pattern, name) {
 
   try {
     return new RegExp(pattern, "i");
-  } catch (err) {
-    throw new Error(`Invalid regex pattern for --${name}: ${err.message}`);
+  } catch (_err) {
+    throw new Error(`Invalid regex pattern for --${name}: ${_err.message}`);
   }
 }
 
@@ -763,7 +763,7 @@ function parseArgs(argv) {
   return args;
 }
 
-function toISO(d) {
+function _toISO(d) {
   // Accept YYYY-MM-DD or ISO; if plain date, make it local midnight -> ISO
   // For safety, treat start as exact given moment; do not auto-adjust.
   const dt = new Date(d);
@@ -787,7 +787,7 @@ function firstLine(msg = "") {
 
 function toCSVCell(s) {
   const v = (s ?? "").toString();
-  if (/[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
+  if (/[",\n]/.test(v)) return `"${v.replace(/"/g, "\"\"")}"`;
   return v;
 }
 
@@ -823,26 +823,26 @@ async function fetchWithRetry(url, options, retries = 3, timeout = 30000) {
       });
       clearTimeout(timeoutId);
       return response;
-    } catch (err) {
+    } catch (_err) {
       if (attempt === retries) {
         clearTimeout(timeoutId);
         // Provide more specific error messages
-        if (err.code === "ENOTFOUND") {
+        if (_err.code === "ENOTFOUND") {
           throw new Error(
             "Network error: Could not resolve host. Check your internet connection."
           );
-        } else if (err.code === "ECONNREFUSED") {
+        } else if (_err.code === "ECONNREFUSED") {
           throw new Error(
             "Network error: Connection refused. Check your internet connection."
           );
-        } else if (err.name === "AbortError") {
+        } else if (_err.name === "AbortError") {
           throw new Error(`Request timeout after ${timeout}ms`);
         } else {
-          throw new Error(`Network error: ${err.message}`);
+          throw new Error(`Network error: ${_err.message}`);
         }
       }
 
-      if (err.name === "AbortError") {
+      if (_err.name === "AbortError") {
         throw new Error(`Request timeout after ${timeout}ms`);
       }
 
@@ -949,11 +949,11 @@ async function fetchCommits({
       if (resp.status === 404) {
         errorMsg = `Repository not found: ${owner}/${repo} (check owner and repo names)`;
       } else if (resp.status === 401) {
-        errorMsg = `Authentication failed: check your GitHub token`;
+        errorMsg = "Authentication failed: check your GitHub token";
       } else if (resp.status === 403) {
-        errorMsg = `Access forbidden: check repository permissions and rate limits`;
+        errorMsg = "Access forbidden: check repository permissions and rate limits";
       } else if (resp.status === 422) {
-        errorMsg = `Invalid request: check branch name and date parameters`;
+        errorMsg = "Invalid request: check branch name and date parameters";
       }
 
       throw new Error(errorMsg);
@@ -1034,7 +1034,7 @@ function groupByDate(items) {
  *
  * @param {Array} items - Array of commit objects with title property
  */
-function outputText(items) {
+function _outputText(items) {
   for (const it of items) {
     if (it.title) console.log(it.title);
   }
@@ -1258,7 +1258,7 @@ function outputHTML(items, args, startISO, endISO) {
     "<head>",
     "<title>Commit History</title>",
     "<style>",
-    'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }',
+    "body { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }",
     ".header { background: #f6f8fa; padding: 20px; border-radius: 6px; margin-bottom: 20px; }",
     ".date-group { margin-bottom: 30px; }",
     ".date-header { background: #f1f3f4; padding: 10px 15px; border-radius: 4px; margin-bottom: 15px; font-weight: 600; color: #24292e; }",
@@ -1272,27 +1272,27 @@ function outputHTML(items, args, startISO, endISO) {
     "</style>",
     "</head>",
     "<body>",
-    '<div class="header">',
+    "<div class=\"header\">",
     `<h1>Commit History: ${args.owner}/${args.repo}</h1>`,
     `<p><strong>Branch:</strong> ${args.branch}</p>`,
     `<p><strong>Date Range:</strong> ${startISO} to ${endISO}</p>`,
     `<p><strong>Total Commits:</strong> ${items.length}</p>`,
     "</div>",
-    '<div class="commits">',
+    "<div class=\"commits\">",
   ];
 
   const grouped = groupByDate(items);
 
   for (const [date, dateItems] of Object.entries(grouped)) {
     html.push(
-      '<div class="date-group">',
+      "<div class=\"date-group\">",
       `<div class="date-header">${date} (${dateItems.length} commits)</div>`
     );
 
     for (const it of dateItems) {
       const author = it.author_login || "Unknown";
       html.push(
-        '<div class="commit">',
+        "<div class=\"commit\">",
         `<div class="title"><a href="${it.html_url}" target="_blank">${it.title}</a></div>`,
         `<div class="author">${author}</div>`,
         "</div>"
@@ -1313,8 +1313,8 @@ function writeOutput(content, outputPath) {
     try {
       writeFileSync(outputPath, content, "utf8");
       console.error(`Output written to: ${outputPath}`);
-    } catch (err) {
-      throw new Error(`Failed to write output file: ${err.message}`);
+    } catch (_err) {
+      throw new Error(`Failed to write output file: ${_err.message}`);
     }
   }
 }
@@ -1526,41 +1526,41 @@ async function main() {
     let output;
 
     switch (format) {
-      case "text":
-        output = items
-          .map((it) => it.title)
-          .filter(Boolean)
-          .join("\n");
-        break;
-      case "grouped":
-        output = outputGrouped(items);
-        break;
-      case "timesheet":
-        output = outputTimesheet(items);
-        break;
-      case "summary":
-        output = outputSummary(items, finalArgs, startISO, endISO);
-        break;
-      case "json":
-        output = outputJSON(items, finalArgs, startISO, endISO);
-        break;
-      case "ndjson":
-        output = outputNDJSON(items);
-        break;
-      case "csv":
-        output = outputCSV(items);
-        break;
-      case "markdown":
-        output = outputMarkdown(items, finalArgs, startISO, endISO);
-        break;
-      case "html":
-        output = outputHTML(items, finalArgs, startISO, endISO);
-        break;
-      default:
-        console.error(
-          `Unknown --format ${finalArgs.format}. Use text|grouped|timesheet|summary|json|ndjson|csv|markdown|html.`
-        );
-        process.exit(2);
+    case "text":
+      output = items
+        .map((it) => it.title)
+        .filter(Boolean)
+        .join("\n");
+      break;
+    case "grouped":
+      output = outputGrouped(items);
+      break;
+    case "timesheet":
+      output = outputTimesheet(items);
+      break;
+    case "summary":
+      output = outputSummary(items, finalArgs, startISO, endISO);
+      break;
+    case "json":
+      output = outputJSON(items, finalArgs, startISO, endISO);
+      break;
+    case "ndjson":
+      output = outputNDJSON(items);
+      break;
+    case "csv":
+      output = outputCSV(items);
+      break;
+    case "markdown":
+      output = outputMarkdown(items, finalArgs, startISO, endISO);
+      break;
+    case "html":
+      output = outputHTML(items, finalArgs, startISO, endISO);
+      break;
+    default:
+      console.error(
+        `Unknown --format ${finalArgs.format}. Use text|grouped|timesheet|summary|json|ndjson|csv|markdown|html.`
+      );
+      process.exit(2);
     }
 
     writeOutput(output, finalArgs.output);
@@ -1593,8 +1593,8 @@ async function main() {
         }
       }
     }
-  } catch (err) {
-    console.error(err?.message || err);
+  } catch (_err) {
+    console.error(_err?.message || _err);
     process.exit(1);
   }
 }
