@@ -715,14 +715,15 @@ function validateRegex(pattern, name) {
       }
     }
 
-    // Prefer RE2 engine if available to avoid catastrophic backtracking
+    // Require RE2 engine to avoid catastrophic backtracking; do not fallback
     try {
       // eslint-disable-next-line global-require, import/no-extraneous-dependencies
       const RE2 = require("re2");
       return new RE2(trimmed, "i");
     } catch {
-      // Fallback to native RegExp if RE2 not installed
-      return new RegExp(trimmed, "i");
+      throw new Error(
+        "Safe regex engine required: please install 're2' (npm i re2) to use this option"
+      );
     }
   } catch (_err) {
     throw new Error(`Invalid regex pattern for --${name}: ${_err.message}`);
