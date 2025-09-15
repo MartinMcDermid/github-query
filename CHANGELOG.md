@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 (2025-09-15)
+
+
+### Features
+
+* add release-it and GitHub workflows ([a34b0ea](https://github.com/MartinMcDermid/github-query/commit/a34b0ea8120d02b773be855f4eb2c6fdce3cfbc5))
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
