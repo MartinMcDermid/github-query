@@ -705,7 +705,7 @@ function validateRegex(pattern, name) {
       /\\\d+/, // backreferences like \1
       /\(\?[!<=]/, // lookarounds (?=, (?!, (?<=, (?<!)
       /\.(\*|\+){2,}/, // ..**, ..++
-      /\((?:[^()]*|\([^()]*\))*\)(?:\+|\*){2,}/, // group with stacked quantifiers
+      /\([^)]*\)[+*]{2,}/, // group with stacked quantifiers (safer detection)
     ];
     for (const rx of dangerous) {
       if (rx.test(trimmed)) {
