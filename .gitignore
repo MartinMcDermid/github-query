@@ -166,10 +166,8 @@ jspm_packages/
 .tern-port
 
 # Output files
-*.md
 *.csv
 *.html
-!README.md
 !config.example.json
 
 # OS generated files
@@ -183,3 +181,5 @@ Thumbs.db
 .idea/
 .idea/*.idea/
 .claude/
+RELEASING.md
+CLAUDE.md
